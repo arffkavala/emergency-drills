@@ -346,10 +346,10 @@
                 <label for="weather">Weather Conditions:</label>
                 <select id="weather">
                     <option value="">Select Weather</option>
-                    <option value="clear">Clear</option>
-                    <option value="clouds">Clouds</option>
-                    <option value="rain">Rain</option>
-                    <option value="snow">Snow</option>
+                    <option value="Clear">Clear</option>
+                    <option value="Clouds">Clouds</option>
+                    <option value="Rain">Rain</option>
+                    <option value="Snow">Snow</option>
                 </select>
             </div>
 
@@ -362,8 +362,8 @@
                 <label for="ground-conditions">Ground Conditions:</label>
                 <select id="ground-conditions">
                     <option value="">Select Ground Condition</option>
-                    <option value="dry">Dry</option>
-                    <option value="wet">Wet</option>
+                    <option value="Dry">Dry</option>
+                    <option value="Wet">Wet</option>
                 </select>
             </div>
 
@@ -371,9 +371,9 @@
                 <label for="vehicle">Vehicle:</label>
                 <select id="vehicle">
                     <option value="">Select Vehicle</option>
-                    <option value="pigasos">Pigasos</option>
-                    <option value="buffalo">Buffalo</option>
-                    <option value="ziegler">Ziegler</option>
+                    <option value="Pigasos">Pigasos</option>
+                    <option value="Buffalo">Buffalo</option>
+                    <option value="Ziegler">Ziegler</option>
                 </select>
             </div>
 
@@ -381,8 +381,8 @@
                 <label for="starting-position">Starting Position:</label>
                 <select id="starting-position">
                     <option value="">Select Starting Position</option>
-                    <option value="out-of-garage">Out of garage</option>
-                    <option value="within-building">Within the building</option>
+                    <option value="Out of garage">Out of garage</option>
+                    <option value="Within the building">Within the building</option>
                 </select>
             </div>
 
@@ -468,6 +468,13 @@
     <script>
         // 🔧 CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE APPS SCRIPT URL
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2V1gO-Yc1bbNb9cvGl-xx-frU7TpWJXfU3L7Pfn0xHaeMVZBbKwi3oReXJqYHDLY8/exec';
+
+        // Function to capitalize first letter of each word
+        function capitalizeWords(str) {
+            return str.replace(/\b\w/g, function(char) {
+                return char.toUpperCase();
+            });
+        }
 
         // Format time input to 2 digits and enforce 10-minute cap
         function formatTimeInput(input) {
@@ -560,7 +567,7 @@
             document.getElementById('pumping-time-display').textContent = `${pumpingMins}'${pumpingSecs}"`;
         }
 
-        // Update timestamp and light conditions
+        // Update timestamp and light conditions with dd-mm-yyyy hh:mm format
         function updateTimestamp() {
             const now = new Date();
             const timestampElement = document.getElementById('current-time');
@@ -568,14 +575,14 @@
             
             if (!timestampElement || !lightConditionsElement) return;
             
-            const timestamp = now.toLocaleString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
+            // Format: dd-mm-yyyy hh:mm
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const timestamp = `${day}-${month}-${year} ${hours}:${minutes}`;
             timestampElement.textContent = timestamp;
 
             const hour = now.getHours();
@@ -683,20 +690,28 @@
                 }
             }
 
-            // Prepare data for submission with new time format
+            // Prepare data for submission with proper formatting
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
             const formData = {
-                weather,
-                visibility,
-                groundConditions,
-                vehicle,
-                startingPosition,
+                timestamp: `${day}-${month}-${year} ${hours}:${minutes}`,
+                weather: capitalizeWords(weather),
+                visibility: visibility,
+                groundConditions: capitalizeWords(groundConditions),
+                vehicle: capitalizeWords(vehicle),
+                startingPosition: capitalizeWords(startingPosition),
                 // New combined time format: "04'24""
                 arrivalTime: `${arrivalMinutes.padStart(2, '0')}'${arrivalSeconds.padStart(2, '0')}"`,
                 // Pumping time is optional - send empty string if not provided
                 pumpingTime: (pumpingMinutes || pumpingSeconds) ? 
                     `${(pumpingMinutes || '00').padStart(2, '0')}'${(pumpingSeconds || '00').padStart(2, '0')}"` : '',
-                comments: comments,
-                lightConditions: document.getElementById('light-conditions').textContent
+                lightConditions: document.getElementById('light-conditions').textContent,
+                comments: comments ? capitalizeWords(comments) : ''
             };
 
             try {
@@ -707,16 +722,13 @@
                 // Submit to Google Sheets using fetch
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Use no-cors to avoid CORS issues
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(formData)
                 });
 
-                // Since we're using no-cors, we can't read the response
-                // But the data should still be sent to Google Sheets
-                
                 // Show success message
                 loadingMsg.style.display = 'none';
                 successMsg.style.display = 'block';
