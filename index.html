@@ -448,7 +448,7 @@
 
     <script>
         // 🔧 CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE APPS SCRIPT URL
-       const GOOGLE_SCRIPT_URL = 'https://cors-anywhere.herokuapp.com/https://script.google.com/macros/s/AKfycbz2V1gO-Yc1bbNb9cvGl-xx-frU7TpWJXfU3L7Pfn0xHaeMVZBbKwi3oReXJqYHDLY8/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2V1gO-Yc1bbNb9cvGl-xx-frU7TpWJXfU3L7Pfn0xHaeMVZBbKwi3oReXJqYHDLY8/exec';
 
         // Format time input to 2 digits and enforce 10-minute cap
         function formatTimeInput(input) {
@@ -611,7 +611,7 @@
             });
         }
 
-        // Submit data to Google Sheets
+        // Submit data to Google Sheets using CORS proxy
         async function submitDrill() {
             const submitBtn = document.getElementById('submit-btn');
             const loadingMsg = document.getElementById('loading-message');
@@ -687,11 +687,15 @@
                 submitBtn.disabled = true;
                 loadingMsg.style.display = 'block';
 
-                // Submit to Google Sheets
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                // Use CORS proxy to avoid CORS issues
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const targetUrl = GOOGLE_SCRIPT_URL;
+                
+                const response = await fetch(proxyUrl + targetUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'text/plain;charset=utf-8',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify(formData)
                 });
@@ -702,6 +706,7 @@
                     // Show success message
                     loadingMsg.style.display = 'none';
                     successMsg.style.display = 'block';
+                    successMsg.innerHTML = '✅ Data successfully saved to Google Sheets!';
                     
                     // Reset form
                     resetForm();
@@ -720,9 +725,40 @@
                 loadingMsg.style.display = 'none';
                 errorMsg.style.display = 'block';
                 errorMsg.innerHTML = `❌ Error: ${error.message}`;
+                
+                // If CORS proxy fails, try direct submission as fallback
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg.innerHTML += '<br>⚠️ Trying alternative method...';
+                    setTimeout(() => submitDirectly(formData), 1000);
+                }
             } finally {
                 submitBtn.disabled = false;
             }
+        }
+
+        // Fallback direct submission method
+        function submitDirectly(formData) {
+            // Create a hidden form and submit it (bypasses CORS)
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = GOOGLE_SCRIPT_URL;
+            form.target = '_blank'; // Open in new window/tab
+            
+            const input = document.createElement('input');
+            input.name = 'data';
+            input.value = JSON.stringify(formData);
+            form.appendChild(input);
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+            
+            // Show success message (we can't get confirmation this way)
+            const successMsg = document.getElementById('success-message');
+            successMsg.style.display = 'block';
+            successMsg.innerHTML = '✅ Data submitted! Check your spreadsheet.';
+            
+            resetForm();
         }
 
         // Reset form after successful submission
