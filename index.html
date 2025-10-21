@@ -87,7 +87,7 @@
             color: #333;
         }
 
-        .form-group select, .form-group input {
+        .form-group select, .form-group input, .form-group textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e1e1e1;
@@ -96,9 +96,15 @@
             transition: border-color 0.3s ease;
         }
 
-        .form-group select:focus, .form-group input:focus {
+        .form-group select:focus, .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
         }
 
         .time-section {
@@ -166,6 +172,13 @@
             border: 1px solid #dee2e6;
         }
 
+        .time-warning {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+
         .submit-btn {
             width: 100%;
             padding: 15px;
@@ -183,6 +196,13 @@
         .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .timestamp {
@@ -222,6 +242,21 @@
             font-size: 0.85rem;
             color: #666;
             margin-top: 5px;
+        }
+
+        .comments-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid #ffeaa7;
+        }
+
+        .comments-section h3 {
+            margin-bottom: 15px;
+            color: #856404;
+            border-bottom: 2px solid #ffc107;
+            padding-bottom: 8px;
         }
     </style>
 </head>
@@ -300,9 +335,12 @@
                 <div class="time-input-group">
                     <div class="time-input">
                         <label for="arrival-minutes">Minutes</label>
-                        <input type="number" id="arrival-minutes" min="0" max="59" placeholder="00" 
+                        <input type="number" id="arrival-minutes" min="0" max="10" placeholder="00" 
                                oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
-                        <div class="input-hint">Enter 00-59</div>
+                        <div class="input-hint">Enter 00-10 (10 minute cap)</div>
+                        <div class="time-warning" id="arrival-warning" style="display: none;">
+                            ⚠️ Maximum 10 minutes allowed
+                        </div>
                     </div>
                     <div class="time-separator">:</div>
                     <div class="time-input">
@@ -321,9 +359,12 @@
                 <div class="time-input-group">
                     <div class="time-input">
                         <label for="pumping-minutes">Minutes</label>
-                        <input type="number" id="pumping-minutes" min="0" max="59" placeholder="00"
+                        <input type="number" id="pumping-minutes" min="0" max="10" placeholder="00"
                                oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
-                        <div class="input-hint">Enter 00-59</div>
+                        <div class="input-hint">Enter 00-10 (10 minute cap)</div>
+                        <div class="time-warning" id="pumping-warning" style="display: none;">
+                            ⚠️ Maximum 10 minutes allowed
+                        </div>
                     </div>
                     <div class="time-separator">:</div>
                     <div class="time-input">
@@ -336,7 +377,23 @@
                 <div class="time-display" id="pumping-time-display">00:00</div>
             </div>
 
-            <button class="submit-btn" onclick="submitDrill()">Register Drill Entry</button>
+            <!-- Comments Section -->
+            <div class="comments-section">
+                <h3>Additional Comments</h3>
+                <div class="form-group">
+                    <label for="comments">Comments (Optional):</label>
+                    <textarea 
+                        id="comments" 
+                        placeholder="Enter any additional comments, observations, or notes about this drill..."
+                        maxlength="500"
+                    ></textarea>
+                    <div class="input-hint">
+                        Maximum 500 characters. <span id="char-count">500</span> characters remaining.
+                    </div>
+                </div>
+            </div>
+
+            <button class="submit-btn" id="submit-btn" onclick="submitDrill()">Register Drill Entry</button>
         </div>
 
         <div id="other-forms" class="form-container hidden">
@@ -348,24 +405,93 @@
     </div>
 
     <script>
-        // Format time input to 2 digits
+        // Format time input to 2 digits and enforce 10-minute cap
         function formatTimeInput(input) {
-            if (input.value.length === 1) {
+            let value = parseInt(input.value) || 0;
+            
+            // Check if it's a minutes input with 10-minute cap
+            if (input.id.includes('minutes')) {
+                if (value > 10) {
+                    value = 10;
+                    input.value = '10';
+                    showTimeWarning(input.id);
+                } else {
+                    hideTimeWarning(input.id);
+                }
+            } else {
+                // Seconds input
+                if (value > 59) {
+                    value = 59;
+                    input.value = '59';
+                }
+            }
+            
+            if (input.value.length === 1 && value < 10) {
                 input.value = '0' + input.value;
             }
-            if (input.value > 59) {
-                input.value = '59';
-            }
+            
             updateTimeDisplays();
+            updateCharCount();
+        }
+
+        // Show time warning
+        function showTimeWarning(inputId) {
+            const warningId = inputId.replace('minutes', 'warning');
+            const warningElement = document.getElementById(warningId);
+            if (warningElement) {
+                warningElement.style.display = 'block';
+            }
+        }
+
+        // Hide time warning
+        function hideTimeWarning(inputId) {
+            const warningId = inputId.replace('minutes', 'warning');
+            const warningElement = document.getElementById(warningId);
+            if (warningElement) {
+                warningElement.style.display = 'none';
+            }
         }
 
         // Validate time input
         function validateTimeInput(input) {
             let value = parseInt(input.value) || 0;
-            if (value < 0) value = 0;
-            if (value > 59) value = 59;
+            
+            if (input.id.includes('minutes')) {
+                // Minutes: 0-10
+                if (value < 0) value = 0;
+                if (value > 10) {
+                    value = 10;
+                    showTimeWarning(input.id);
+                } else {
+                    hideTimeWarning(input.id);
+                }
+            } else {
+                // Seconds: 0-59
+                if (value < 0) value = 0;
+                if (value > 59) value = 59;
+            }
+            
             input.value = value.toString().padStart(2, '0');
             updateTimeDisplays();
+        }
+
+        // Update character count for comments
+        function updateCharCount() {
+            const comments = document.getElementById('comments');
+            const charCount = document.getElementById('char-count');
+            const maxLength = 500;
+            const currentLength = comments.value.length;
+            
+            charCount.textContent = maxLength - currentLength;
+            
+            // Change color when approaching limit
+            if (currentLength > maxLength * 0.9) {
+                charCount.style.color = '#e74c3c';
+                charCount.style.fontWeight = 'bold';
+            } else {
+                charCount.style.color = '#666';
+                charCount.style.fontWeight = 'normal';
+            }
         }
 
         // Update time displays
@@ -471,6 +597,7 @@
             const groundConditions = document.getElementById('ground-conditions').value;
             const vehicle = document.getElementById('vehicle').value;
             const startingPosition = document.getElementById('starting-position').value;
+            const comments = document.getElementById('comments').value;
             
             const arrivalMinutes = document.getElementById('arrival-minutes').value || '00';
             const arrivalSeconds = document.getElementById('arrival-seconds').value || '00';
@@ -493,6 +620,19 @@
                 return;
             }
 
+            // Validate 10-minute cap
+            const arrivalTotal = parseInt(arrivalMinutes) * 60 + parseInt(arrivalSeconds);
+            const pumpingTotal = parseInt(pumpingMinutes) * 60 + parseInt(pumpingSeconds);
+            
+            if (arrivalTotal > 600) { // 10 minutes in seconds
+                alert('Arrival Time cannot exceed 10 minutes');
+                return;
+            }
+            if (pumpingTotal > 600) { // 10 minutes in seconds
+                alert('Pumping Time cannot exceed 10 minutes');
+                return;
+            }
+
             const entry = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
@@ -509,6 +649,7 @@
                     minutes: pumpingMinutes.padStart(2, '0'), 
                     seconds: pumpingSeconds.padStart(2, '0') 
                 },
+                comments: comments,
                 lightConditions: document.getElementById('light-conditions').textContent
             };
 
@@ -518,11 +659,12 @@
 
             alert('Drill entry registered successfully!');
             
-            // Reset form (keep time values for convenience)
+            // Reset form
             document.getElementById('weather').value = '';
             document.getElementById('ground-conditions').value = '';
             document.getElementById('vehicle').value = '';
             document.getElementById('starting-position').value = '';
+            document.getElementById('comments').value = '';
             
             // Reset time inputs
             document.getElementById('arrival-minutes').value = '';
@@ -531,6 +673,7 @@
             document.getElementById('pumping-seconds').value = '';
             
             updateTimeDisplays();
+            updateCharCount();
         }
 
         // Initialize everything when page loads
@@ -542,8 +685,12 @@
             setInterval(updateTimestamp, 1000);
             fetchVisibilityData();
             
-            // Initialize time displays
+            // Initialize time displays and character count
             updateTimeDisplays();
+            updateCharCount();
+            
+            // Add event listener for comments textarea
+            document.getElementById('comments').addEventListener('input', updateCharCount);
         });
     </script>
 </body>
