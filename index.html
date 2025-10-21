@@ -116,90 +116,49 @@
             padding-bottom: 8px;
         }
 
-        .digital-wheel-container {
+        .time-input-group {
             display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 15px;
+            gap: 15px;
+            align-items: center;
         }
 
-        .wheel-group {
+        .time-input {
+            flex: 1;
+        }
+
+        .time-input label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .time-input input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 1rem;
             text-align: center;
         }
 
-        .wheel-label {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #495057;
+        .time-input input:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
-        .digital-wheel {
-            width: 80px;
-            height: 120px;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            overflow: hidden;
-            background: white;
-            position: relative;
-            touch-action: none;
-        }
-
-        .wheel-numbers {
-            position: absolute;
-            width: 100%;
-            top: 40px;
-            transition: transform 0.3s ease;
-        }
-
-        .wheel-number {
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
+        .time-separator {
+            font-size: 1.5rem;
             font-weight: bold;
             color: #495057;
-            user-select: none;
-        }
-
-        .wheel-number.selected {
-            background: #667eea;
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .wheel-controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .wheel-btn {
-            width: 35px;
-            height: 35px;
-            border: none;
-            border-radius: 50%;
-            background: #667eea;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .wheel-btn:hover {
-            background: #5a6fd8;
-            transform: scale(1.1);
+            margin-top: 25px;
         }
 
         .time-display {
             text-align: center;
             font-size: 1.1rem;
             font-weight: 600;
-            margin-top: 10px;
+            margin-top: 15px;
             color: #495057;
             padding: 10px;
             background: white;
@@ -259,16 +218,10 @@
             display: none;
         }
 
-        .colon {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #495057;
-            align-self: center;
-            margin: 0 5px;
-        }
-
-        .loading {
-            opacity: 0.7;
+        .input-hint {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -344,27 +297,19 @@
             <!-- Arrival Time Section -->
             <div class="time-section">
                 <h3>Arrival Time</h3>
-                <div class="digital-wheel-container">
-                    <div class="wheel-group">
-                        <div class="wheel-label">Minutes</div>
-                        <div class="digital-wheel" id="arrival-minutes-wheel">
-                            <div class="wheel-numbers" id="arrival-minutes-numbers"></div>
-                        </div>
-                        <div class="wheel-controls">
-                            <button class="wheel-btn" onclick="scrollWheel('arrival-minutes', 'up')">↑</button>
-                            <button class="wheel-btn" onclick="scrollWheel('arrival-minutes', 'down')">↓</button>
-                        </div>
+                <div class="time-input-group">
+                    <div class="time-input">
+                        <label for="arrival-minutes">Minutes</label>
+                        <input type="number" id="arrival-minutes" min="0" max="59" placeholder="00" 
+                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                        <div class="input-hint">Enter 00-59</div>
                     </div>
-                    <div class="colon">:</div>
-                    <div class="wheel-group">
-                        <div class="wheel-label">Seconds</div>
-                        <div class="digital-wheel" id="arrival-seconds-wheel">
-                            <div class="wheel-numbers" id="arrival-seconds-numbers"></div>
-                        </div>
-                        <div class="wheel-controls">
-                            <button class="wheel-btn" onclick="scrollWheel('arrival-seconds', 'up')">↑</button>
-                            <button class="wheel-btn" onclick="scrollWheel('arrival-seconds', 'down')">↓</button>
-                        </div>
+                    <div class="time-separator">:</div>
+                    <div class="time-input">
+                        <label for="arrival-seconds">Seconds</label>
+                        <input type="number" id="arrival-seconds" min="0" max="59" placeholder="00"
+                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                        <div class="input-hint">Enter 00-59</div>
                     </div>
                 </div>
                 <div class="time-display" id="arrival-time-display">00:00</div>
@@ -373,27 +318,19 @@
             <!-- Pumping Time Section -->
             <div class="time-section">
                 <h3>Pumping Time</h3>
-                <div class="digital-wheel-container">
-                    <div class="wheel-group">
-                        <div class="wheel-label">Minutes</div>
-                        <div class="digital-wheel" id="pumping-minutes-wheel">
-                            <div class="wheel-numbers" id="pumping-minutes-numbers"></div>
-                        </div>
-                        <div class="wheel-controls">
-                            <button class="wheel-btn" onclick="scrollWheel('pumping-minutes', 'up')">↑</button>
-                            <button class="wheel-btn" onclick="scrollWheel('pumping-minutes', 'down')">↓</button>
-                        </div>
+                <div class="time-input-group">
+                    <div class="time-input">
+                        <label for="pumping-minutes">Minutes</label>
+                        <input type="number" id="pumping-minutes" min="0" max="59" placeholder="00"
+                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                        <div class="input-hint">Enter 00-59</div>
                     </div>
-                    <div class="colon">:</div>
-                    <div class="wheel-group">
-                        <div class="wheel-label">Seconds</div>
-                        <div class="digital-wheel" id="pumping-seconds-wheel">
-                            <div class="wheel-numbers" id="pumping-seconds-numbers"></div>
-                        </div>
-                        <div class="wheel-controls">
-                            <button class="wheel-btn" onclick="scrollWheel('pumping-seconds', 'up')">↑</button>
-                            <button class="wheel-btn" onclick="scrollWheel('pumping-seconds', 'down')">↓</button>
-                        </div>
+                    <div class="time-separator">:</div>
+                    <div class="time-input">
+                        <label for="pumping-seconds">Seconds</label>
+                        <input type="number" id="pumping-seconds" min="0" max="59" placeholder="00"
+                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                        <div class="input-hint">Enter 00-59</div>
                     </div>
                 </div>
                 <div class="time-display" id="pumping-time-display">00:00</div>
@@ -411,89 +348,32 @@
     </div>
 
     <script>
-        // Global variables for wheel values
-        const wheelValues = {
-            'arrival-minutes': 5,
-            'arrival-seconds': 0,
-            'pumping-minutes': 10,
-            'pumping-seconds': 0
-        };
-
-        // Initialize digital wheels
-        function initializeWheels() {
-            const wheels = [
-                { id: 'arrival-minutes', max: 59, defaultValue: 5 },
-                { id: 'arrival-seconds', max: 59, defaultValue: 0 },
-                { id: 'pumping-minutes', max: 59, defaultValue: 10 },
-                { id: 'pumping-seconds', max: 59, defaultValue: 0 }
-            ];
-
-            wheels.forEach(wheel => {
-                createWheel(wheel.id, wheel.max, wheel.defaultValue);
-            });
-
+        // Format time input to 2 digits
+        function formatTimeInput(input) {
+            if (input.value.length === 1) {
+                input.value = '0' + input.value;
+            }
+            if (input.value > 59) {
+                input.value = '59';
+            }
             updateTimeDisplays();
         }
 
-        // Create a single wheel
-        function createWheel(wheelId, max, defaultValue) {
-            const numbersElement = document.getElementById(wheelId + '-numbers');
-            numbersElement.innerHTML = '';
-
-            // Create numbers with padding
-            for (let i = 0; i <= max; i++) {
-                const div = document.createElement('div');
-                div.className = 'wheel-number';
-                div.textContent = i.toString().padStart(2, '0');
-                div.dataset.value = i;
-                numbersElement.appendChild(div);
-            }
-
-            // Set initial value
-            wheelValues[wheelId] = defaultValue;
-            updateWheelPosition(wheelId);
-        }
-
-        // Update wheel visual position
-        function updateWheelPosition(wheelId) {
-            const numbersElement = document.getElementById(wheelId + '-numbers');
-            const value = wheelValues[wheelId];
-            const itemHeight = 40;
-            
-            numbersElement.style.transform = `translateY(${-value * itemHeight}px)`;
-            
-            // Update selected class
-            const numbers = numbersElement.querySelectorAll('.wheel-number');
-            numbers.forEach(num => num.classList.remove('selected'));
-            if (numbers[value]) {
-                numbers[value].classList.add('selected');
-            }
-        }
-
-        // Scroll wheel function
-        function scrollWheel(wheelId, direction) {
-            const max = 59; // All wheels go 0-59
-            
-            if (direction === 'up') {
-                if (wheelValues[wheelId] < max) {
-                    wheelValues[wheelId]++;
-                }
-            } else {
-                if (wheelValues[wheelId] > 0) {
-                    wheelValues[wheelId]--;
-                }
-            }
-            
-            updateWheelPosition(wheelId);
+        // Validate time input
+        function validateTimeInput(input) {
+            let value = parseInt(input.value) || 0;
+            if (value < 0) value = 0;
+            if (value > 59) value = 59;
+            input.value = value.toString().padStart(2, '0');
             updateTimeDisplays();
         }
 
         // Update time displays
         function updateTimeDisplays() {
-            const arrivalMins = wheelValues['arrival-minutes'].toString().padStart(2, '0');
-            const arrivalSecs = wheelValues['arrival-seconds'].toString().padStart(2, '0');
-            const pumpingMins = wheelValues['pumping-minutes'].toString().padStart(2, '0');
-            const pumpingSecs = wheelValues['pumping-seconds'].toString().padStart(2, '0');
+            const arrivalMins = document.getElementById('arrival-minutes').value.padStart(2, '0') || '00';
+            const arrivalSecs = document.getElementById('arrival-seconds').value.padStart(2, '0') || '00';
+            const pumpingMins = document.getElementById('pumping-minutes').value.padStart(2, '0') || '00';
+            const pumpingSecs = document.getElementById('pumping-seconds').value.padStart(2, '0') || '00';
 
             document.getElementById('arrival-time-display').textContent = `${arrivalMins}:${arrivalSecs}`;
             document.getElementById('pumping-time-display').textContent = `${pumpingMins}:${pumpingSecs}`;
@@ -505,7 +385,8 @@
             const timestampElement = document.getElementById('current-time');
             const lightConditionsElement = document.getElementById('light-conditions');
             
-            // Format timestamp
+            if (!timestampElement || !lightConditionsElement) return;
+            
             const timestamp = now.toLocaleString('en-GB', {
                 day: '2-digit',
                 month: '2-digit',
@@ -516,36 +397,31 @@
             });
             timestampElement.textContent = timestamp;
 
-            // Calculate light conditions
-            const lightCondition = calculateLightCondition(now);
+            // Simple light calculation
+            const hour = now.getHours();
+            let lightCondition;
+            if (hour >= 6 && hour < 8) {
+                lightCondition = { text: 'Dawn', class: 'dawn' };
+            } else if (hour >= 8 && hour < 18) {
+                lightCondition = { text: 'Daylight', class: 'day' };
+            } else if (hour >= 18 && hour < 20) {
+                lightCondition = { text: 'Dusk', class: 'dusk' };
+            } else {
+                lightCondition = { text: 'Night', class: 'night' };
+            }
+            
             lightConditionsElement.textContent = lightCondition.text;
             lightConditionsElement.className = 'light-condition ' + lightCondition.class;
         }
 
-        // Calculate light conditions based on sunrise/sunset for Kavala
-        function calculateLightCondition(date) {
-            // Simple calculation based on time of day
-            const hour = date.getHours();
-            
-            if (hour >= 6 && hour < 8) {
-                return { text: 'Dawn', class: 'dawn' };
-            } else if (hour >= 8 && hour < 18) {
-                return { text: 'Daylight', class: 'day' };
-            } else if (hour >= 18 && hour < 20) {
-                return { text: 'Dusk', class: 'dusk' };
-            } else {
-                return { text: 'Night', class: 'night' };
-            }
-        }
-
-        // Fetch visibility data (simulated)
+        // Fetch visibility data
         function fetchVisibilityData() {
             const visibilityElement = document.getElementById('visibility');
             const weatherStatus = document.getElementById('weather-status');
             
-            // Simulate API call
+            if (!visibilityElement || !weatherStatus) return;
+            
             setTimeout(() => {
-                // Mock data since we can't directly scrape due to CORS
                 const mockVisibility = "10 km";
                 visibilityElement.value = mockVisibility;
                 weatherStatus.innerHTML = `Visibility at LGKV: ${mockVisibility} (Last updated: ${new Date().toLocaleTimeString()})`;
@@ -565,21 +441,24 @@
             }
         }
 
-        // Task selection functionality
+        // Task selection
         function setupTaskSelection() {
-            document.querySelectorAll('.task-button').forEach(button => {
+            const buttons = document.querySelectorAll('.task-button');
+            buttons.forEach(button => {
                 button.addEventListener('click', function() {
-                    document.querySelectorAll('.task-button').forEach(btn => btn.classList.remove('active'));
+                    buttons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
 
                     const task = this.dataset.task;
+                    const drillsForm = document.getElementById('drills-form');
+                    const otherForms = document.getElementById('other-forms');
                     
                     if (task === 'drills') {
-                        document.getElementById('drills-form').classList.remove('hidden');
-                        document.getElementById('other-forms').classList.add('hidden');
+                        drillsForm.classList.remove('hidden');
+                        otherForms.classList.add('hidden');
                     } else {
-                        document.getElementById('drills-form').classList.add('hidden');
-                        document.getElementById('other-forms').classList.remove('hidden');
+                        drillsForm.classList.add('hidden');
+                        otherForms.classList.remove('hidden');
                     }
                 });
             });
@@ -593,10 +472,10 @@
             const vehicle = document.getElementById('vehicle').value;
             const startingPosition = document.getElementById('starting-position').value;
             
-            const arrivalMinutes = wheelValues['arrival-minutes'];
-            const arrivalSeconds = wheelValues['arrival-seconds'];
-            const pumpingMinutes = wheelValues['pumping-minutes'];
-            const pumpingSeconds = wheelValues['pumping-seconds'];
+            const arrivalMinutes = document.getElementById('arrival-minutes').value || '00';
+            const arrivalSeconds = document.getElementById('arrival-seconds').value || '00';
+            const pumpingMinutes = document.getElementById('pumping-minutes').value || '00';
+            const pumpingSeconds = document.getElementById('pumping-seconds').value || '00';
 
             // Validation
             if (!weather || !groundConditions || !vehicle || !startingPosition) {
@@ -604,7 +483,16 @@
                 return;
             }
 
-            // Create entry
+            // Validate time inputs
+            if (arrivalMinutes === '00' && arrivalSeconds === '00') {
+                alert('Please enter Arrival Time');
+                return;
+            }
+            if (pumpingMinutes === '00' && pumpingSeconds === '00') {
+                alert('Please enter Pumping Time');
+                return;
+            }
+
             const entry = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
@@ -613,13 +501,18 @@
                 groundConditions,
                 vehicle,
                 startingPosition,
-                arrivalTime: { minutes: arrivalMinutes, seconds: arrivalSeconds },
-                pumpingTime: { minutes: pumpingMinutes, seconds: pumpingSeconds },
+                arrivalTime: { 
+                    minutes: arrivalMinutes.padStart(2, '0'), 
+                    seconds: arrivalSeconds.padStart(2, '0') 
+                },
+                pumpingTime: { 
+                    minutes: pumpingMinutes.padStart(2, '0'), 
+                    seconds: pumpingSeconds.padStart(2, '0') 
+                },
                 lightConditions: document.getElementById('light-conditions').textContent
             };
 
-            // Save to localStorage
-            const drillsDB = JSON.parse(localStorage.getItem('drillsDB'));
+            const drillsDB = JSON.parse(localStorage.getItem('drillsDB') || '[]');
             drillsDB.push(entry);
             localStorage.setItem('drillsDB', JSON.stringify(drillsDB));
 
@@ -630,36 +523,28 @@
             document.getElementById('ground-conditions').value = '';
             document.getElementById('vehicle').value = '';
             document.getElementById('starting-position').value = '';
+            
+            // Reset time inputs
+            document.getElementById('arrival-minutes').value = '';
+            document.getElementById('arrival-seconds').value = '';
+            document.getElementById('pumping-minutes').value = '';
+            document.getElementById('pumping-seconds').value = '';
+            
+            updateTimeDisplays();
         }
 
         // Initialize everything when page loads
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('Initializing application...');
-            
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing app...');
             initializeDatabases();
             setupTaskSelection();
-            initializeWheels();
-            
-            // Start timestamp updates immediately
             updateTimestamp();
             setInterval(updateTimestamp, 1000);
-            
-            // Fetch weather data
             fetchVisibilityData();
             
-            console.log('Application initialized successfully');
+            // Initialize time displays
+            updateTimeDisplays();
         });
-
-        // Fallback initialization
-        setTimeout(function() {
-            if (!document.getElementById('current-time').textContent || 
-                document.getElementById('current-time').textContent === 'Loading...') {
-                console.log('Fallback initialization...');
-                updateTimestamp();
-                initializeWheels();
-                fetchVisibilityData();
-            }
-        }, 1000);
     </script>
 </body>
 </html>
