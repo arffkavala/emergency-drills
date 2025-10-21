@@ -258,6 +258,37 @@
             border-bottom: 2px solid #ffc107;
             padding-bottom: 8px;
         }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -274,6 +305,17 @@
         </div>
 
         <div id="drills-form" class="form-container">
+            <!-- Status Messages -->
+            <div class="loading" id="loading-message">
+                ⏳ Submitting data to Google Sheets...
+            </div>
+            <div class="success-message" id="success-message">
+                ✅ Data successfully saved to Google Sheets!
+            </div>
+            <div class="error-message" id="error-message">
+                ❌ Error saving data. Please try again.
+            </div>
+
             <!-- Current Time Section -->
             <div class="timestamp" id="timestamp-display">
                 <strong>Current Time:</strong> <span id="current-time">Loading...</span><br>
@@ -405,11 +447,13 @@
     </div>
 
     <script>
+        // 🔧 CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE APPS SCRIPT URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+
         // Format time input to 2 digits and enforce 10-minute cap
         function formatTimeInput(input) {
             let value = parseInt(input.value) || 0;
             
-            // Check if it's a minutes input with 10-minute cap
             if (input.id.includes('minutes')) {
                 if (value > 10) {
                     value = 10;
@@ -419,7 +463,6 @@
                     hideTimeWarning(input.id);
                 }
             } else {
-                // Seconds input
                 if (value > 59) {
                     value = 59;
                     input.value = '59';
@@ -434,22 +477,17 @@
             updateCharCount();
         }
 
-        // Show time warning
+        // Show/hide time warnings
         function showTimeWarning(inputId) {
             const warningId = inputId.replace('minutes', 'warning');
             const warningElement = document.getElementById(warningId);
-            if (warningElement) {
-                warningElement.style.display = 'block';
-            }
+            if (warningElement) warningElement.style.display = 'block';
         }
 
-        // Hide time warning
         function hideTimeWarning(inputId) {
             const warningId = inputId.replace('minutes', 'warning');
             const warningElement = document.getElementById(warningId);
-            if (warningElement) {
-                warningElement.style.display = 'none';
-            }
+            if (warningElement) warningElement.style.display = 'none';
         }
 
         // Validate time input
@@ -457,7 +495,6 @@
             let value = parseInt(input.value) || 0;
             
             if (input.id.includes('minutes')) {
-                // Minutes: 0-10
                 if (value < 0) value = 0;
                 if (value > 10) {
                     value = 10;
@@ -466,7 +503,6 @@
                     hideTimeWarning(input.id);
                 }
             } else {
-                // Seconds: 0-59
                 if (value < 0) value = 0;
                 if (value > 59) value = 59;
             }
@@ -484,7 +520,6 @@
             
             charCount.textContent = maxLength - currentLength;
             
-            // Change color when approaching limit
             if (currentLength > maxLength * 0.9) {
                 charCount.style.color = '#e74c3c';
                 charCount.style.fontWeight = 'bold';
@@ -523,7 +558,6 @@
             });
             timestampElement.textContent = timestamp;
 
-            // Simple light calculation
             const hour = now.getHours();
             let lightCondition;
             if (hour >= 6 && hour < 8) {
@@ -554,19 +588,6 @@
             }, 1000);
         }
 
-        // Initialize databases
-        function initializeDatabases() {
-            if (!localStorage.getItem('drillsDB')) {
-                localStorage.setItem('drillsDB', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('refuelingDB')) {
-                localStorage.setItem('refuelingDB', JSON.stringify([]));
-            }
-            if (!localStorage.getItem('incidentsDB')) {
-                localStorage.setItem('incidentsDB', JSON.stringify([]));
-            }
-        }
-
         // Task selection
         function setupTaskSelection() {
             const buttons = document.querySelectorAll('.task-button');
@@ -590,8 +611,18 @@
             });
         }
 
-        // Form submission
-        function submitDrill() {
+        // Submit data to Google Sheets
+        async function submitDrill() {
+            const submitBtn = document.getElementById('submit-btn');
+            const loadingMsg = document.getElementById('loading-message');
+            const successMsg = document.getElementById('success-message');
+            const errorMsg = document.getElementById('error-message');
+
+            // Hide previous messages
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            // Get form data
             const weather = document.getElementById('weather').value;
             const visibility = document.getElementById('visibility').value;
             const groundConditions = document.getElementById('ground-conditions').value;
@@ -610,7 +641,6 @@
                 return;
             }
 
-            // Validate time inputs
             if (arrivalMinutes === '00' && arrivalSeconds === '00') {
                 alert('Please enter Arrival Time');
                 return;
@@ -620,22 +650,20 @@
                 return;
             }
 
-            // Validate 10-minute cap
             const arrivalTotal = parseInt(arrivalMinutes) * 60 + parseInt(arrivalSeconds);
             const pumpingTotal = parseInt(pumpingMinutes) * 60 + parseInt(pumpingSeconds);
             
-            if (arrivalTotal > 600) { // 10 minutes in seconds
+            if (arrivalTotal > 600) {
                 alert('Arrival Time cannot exceed 10 minutes');
                 return;
             }
-            if (pumpingTotal > 600) { // 10 minutes in seconds
+            if (pumpingTotal > 600) {
                 alert('Pumping Time cannot exceed 10 minutes');
                 return;
             }
 
-            const entry = {
-                id: Date.now(),
-                timestamp: new Date().toISOString(),
+            // Prepare data for submission
+            const formData = {
                 weather,
                 visibility,
                 groundConditions,
@@ -650,23 +678,60 @@
                     seconds: pumpingSeconds.padStart(2, '0') 
                 },
                 comments: comments,
-                lightConditions: document.getElementById('light-conditions').textContent
+                lightConditions: document.getElementById('light-conditions').textContent,
+                timestamp: new Date().toISOString()
             };
 
-            const drillsDB = JSON.parse(localStorage.getItem('drillsDB') || '[]');
-            drillsDB.push(entry);
-            localStorage.setItem('drillsDB', JSON.stringify(drillsDB));
+            try {
+                // Show loading
+                submitBtn.disabled = true;
+                loadingMsg.style.display = 'block';
 
-            alert('Drill entry registered successfully!');
-            
-            // Reset form
+                // Submit to Google Sheets
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Show success message
+                    loadingMsg.style.display = 'none';
+                    successMsg.style.display = 'block';
+                    
+                    // Reset form
+                    resetForm();
+                    
+                    // Hide success message after 5 seconds
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 5000);
+                    
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error('Error submitting data:', error);
+                loadingMsg.style.display = 'none';
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = `❌ Error: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Reset form after successful submission
+        function resetForm() {
             document.getElementById('weather').value = '';
             document.getElementById('ground-conditions').value = '';
             document.getElementById('vehicle').value = '';
             document.getElementById('starting-position').value = '';
             document.getElementById('comments').value = '';
-            
-            // Reset time inputs
             document.getElementById('arrival-minutes').value = '';
             document.getElementById('arrival-seconds').value = '';
             document.getElementById('pumping-minutes').value = '';
@@ -679,17 +744,14 @@
         // Initialize everything when page loads
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing app...');
-            initializeDatabases();
             setupTaskSelection();
             updateTimestamp();
             setInterval(updateTimestamp, 1000);
             fetchVisibilityData();
             
-            // Initialize time displays and character count
             updateTimeDisplays();
             updateCharCount();
             
-            // Add event listener for comments textarea
             document.getElementById('comments').addEventListener('input', updateCharCount);
         });
     </script>
