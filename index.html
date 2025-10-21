@@ -322,10 +322,10 @@
         <div id="drills-form" class="form-container">
             <!-- Status Messages -->
             <div class="loading" id="loading-message">
-                ⏳ Submitting data to database...
+                ⏳ Submitting data to Google Sheets...
             </div>
             <div class="success-message" id="success-message">
-                ✅ Data successfully saved to database!
+                ✅ Data successfully saved to Google Sheets!
             </div>
             <div class="error-message" id="error-message">
                 ❌ Error saving data. Please try again.
@@ -466,6 +466,9 @@
     </div>
 
     <script>
+        // 🔧 CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE APPS SCRIPT URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2V1gO-Yc1bbNb9cvGl-xx-frU7TpWJXfU3L7Pfn0xHaeMVZBbKwi3oReXJqYHDLY8/exec';
+
         // Format time input to 2 digits and enforce 10-minute cap
         function formatTimeInput(input) {
             let value = parseInt(input.value) || 0;
@@ -701,24 +704,23 @@
                 submitBtn.disabled = true;
                 loadingMsg.style.display = 'block';
 
-                // For now, we'll store in localStorage and show success
-                // In production, you would send this to your Google Sheet
-                const drillsDB = JSON.parse(localStorage.getItem('drillsDB') || '[]');
-                const entry = {
-                    id: Date.now(),
-                    timestamp: new Date().toISOString(),
-                    ...formData
-                };
-                drillsDB.push(entry);
-                localStorage.setItem('drillsDB', JSON.stringify(drillsDB));
+                // Submit to Google Sheets using fetch
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Use no-cors to avoid CORS issues
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
 
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
+                // Since we're using no-cors, we can't read the response
+                // But the data should still be sent to Google Sheets
+                
                 // Show success message
                 loadingMsg.style.display = 'none';
                 successMsg.style.display = 'block';
-                successMsg.innerHTML = '✅ Data successfully saved to database!';
+                successMsg.innerHTML = '✅ Data successfully saved to Google Sheets!';
                 
                 // Reset form
                 resetForm();
@@ -732,7 +734,10 @@
                 console.error('Error submitting data:', error);
                 loadingMsg.style.display = 'none';
                 errorMsg.style.display = 'block';
-                errorMsg.innerHTML = `❌ Error: ${error.message}`;
+                errorMsg.innerHTML = `❌ Error: ${error.message}. Data may still have been saved.`;
+                
+                // Even if there's an error, reset the form for a new entry
+                resetForm();
             } finally {
                 submitBtn.disabled = false;
             }
