@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emergency Response Task Registry</title>
     <style>
-        /* [KEEP ALL YOUR EXISTING CSS STYLES - THEY ARE CORRECT] */
         * {
             margin: 0;
             padding: 0;
@@ -184,6 +183,15 @@
             font-size: 0.9rem;
             margin-top: 5px;
             font-weight: 500;
+        }
+
+        .validation-error {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-weight: 500;
+            text-align: center;
+            display: none;
         }
 
         .optional-badge {
@@ -394,7 +402,7 @@
                     <div class="time-input">
                         <label for="arrival-minutes">Minutes</label>
                         <input type="number" id="arrival-minutes" min="0" max="10" placeholder="00" 
-                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                               oninput="formatTimeInput(this); validateTimeComparison();">
                         <div class="input-hint">Enter 00-10 (10 minute cap)</div>
                         <div class="time-warning" id="arrival-warning" style="display: none;">
                             ⚠️ Maximum 10 minutes allowed
@@ -404,7 +412,7 @@
                     <div class="time-input">
                         <label for="arrival-seconds">Seconds</label>
                         <input type="number" id="arrival-seconds" min="0" max="59" placeholder="00"
-                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                               oninput="formatTimeInput(this); validateTimeComparison();">
                         <div class="input-hint">Enter 00-59</div>
                     </div>
                 </div>
@@ -420,7 +428,7 @@
                     <div class="time-input">
                         <label for="pumping-minutes">Minutes</label>
                         <input type="number" id="pumping-minutes" min="0" max="10" placeholder="00"
-                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                               oninput="formatTimeInput(this); validateTimeComparison();">
                         <div class="input-hint">Enter 00-10 (10 minute cap)</div>
                         <div class="time-warning" id="pumping-warning" style="display: none;">
                             ⚠️ Maximum 10 minutes allowed
@@ -430,12 +438,15 @@
                     <div class="time-input">
                         <label for="pumping-seconds">Seconds</label>
                         <input type="number" id="pumping-seconds" min="0" max="59" placeholder="00"
-                               oninput="formatTimeInput(this)" onblur="validateTimeInput(this)">
+                               oninput="formatTimeInput(this); validateTimeComparison();">
                         <div class="input-hint">Enter 00-59</div>
                     </div>
                 </div>
                 <div class="time-display">
                     <strong>Formatted Time:</strong> <span id="pumping-time-display" class="time-format">00'00"</span>
+                </div>
+                <div class="validation-error" id="time-comparison-error">
+                    ⚠️ Pumping Time cannot be less than Arrival Time
                 </div>
             </div>
 
@@ -469,14 +480,6 @@
     <script>
         // 🔧 CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE APPS SCRIPT URL
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz2V1gO-Yc1bbNb9cvGl-xx-frU7TpWJXfU3L7Pfn0xHaeMVZBbKwi3oReXJqYHDLY8/exec';
-
-        // Function to capitalize first letter of each word
-        function capitalizeWords(str) {
-            if (!str) return '';
-            return str.replace(/\b\w/g, function(char) {
-                return char.toUpperCase();
-            });
-        }
 
         // Format time input to 2 digits and enforce 10-minute cap
         function formatTimeInput(input) {
@@ -516,6 +519,28 @@
             const warningId = inputId.replace('minutes', 'warning');
             const warningElement = document.getElementById(warningId);
             if (warningElement) warningElement.style.display = 'none';
+        }
+
+        // Validate time comparison - Pumping Time cannot be less than Arrival Time
+        function validateTimeComparison() {
+            const arrivalMins = parseInt(document.getElementById('arrival-minutes').value) || 0;
+            const arrivalSecs = parseInt(document.getElementById('arrival-seconds').value) || 0;
+            const pumpingMins = parseInt(document.getElementById('pumping-minutes').value) || 0;
+            const pumpingSecs = parseInt(document.getElementById('pumping-seconds').value) || 0;
+            
+            const arrivalTotal = arrivalMins * 60 + arrivalSecs;
+            const pumpingTotal = pumpingMins * 60 + pumpingSecs;
+            
+            const errorElement = document.getElementById('time-comparison-error');
+            
+            // Only validate if both times have values and pumping time is provided
+            if (arrivalTotal > 0 && pumpingTotal > 0 && pumpingTotal < arrivalTotal) {
+                errorElement.style.display = 'block';
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                return true;
+            }
         }
 
         // Validate time input
@@ -569,7 +594,7 @@
             document.getElementById('pumping-time-display').textContent = `${pumpingMins}'${pumpingSecs}"`;
         }
 
-        // Update timestamp and light conditions with 24-hour format
+        // Update timestamp and light conditions with FORCED 24-hour format
         function updateTimestamp() {
             const now = new Date();
             const timestampElement = document.getElementById('current-time');
@@ -577,11 +602,11 @@
             
             if (!timestampElement || !lightConditionsElement) return;
             
-            // 24-hour format: dd-mm-yyyy hh:mm
+            // FORCE 24-hour format regardless of locale
             const day = String(now.getDate()).padStart(2, '0');
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const year = now.getFullYear();
-            const hours = String(now.getHours()).padStart(2, '0'); // 24-hour format
+            const hours = String(now.getHours()).padStart(2, '0'); // Always 24-hour
             const minutes = String(now.getMinutes()).padStart(2, '0');
             
             const timestamp = `${day}-${month}-${year} ${hours}:${minutes}`;
@@ -640,7 +665,7 @@
             });
         }
 
-        // Submit data to Google Sheets - FIXED DATA STRUCTURE
+        // Submit data to Google Sheets
         async function submitDrill() {
             const submitBtn = document.getElementById('submit-btn');
             const loadingMsg = document.getElementById('loading-message');
@@ -690,6 +715,12 @@
                     alert('Pumping Time cannot exceed 10 minutes');
                     return;
                 }
+                
+                // NEW VALIDATION: Pumping Time cannot be less than Arrival Time
+                if (pumpingTotal < arrivalTotal) {
+                    alert('Pumping Time cannot be less than Arrival Time');
+                    return;
+                }
             }
 
             // Prepare data for submission with proper formatting
@@ -700,9 +731,9 @@
             const hours = String(now.getHours()).padStart(2, '0'); // 24-hour format
             const minutes = String(now.getMinutes()).padStart(2, '0');
             
-            // CORRECTED DATA STRUCTURE - matches Google Apps Script expectations
+            // CORRECTED DATA STRUCTURE
             const formData = {
-                timestamp: `${day}-${month}-${year} ${hours}:${minutes}`,
+                timestamp: `${day}-${month}-${year} ${hours}:${minutes}`, // 24-hour format
                 weather: weather,
                 visibility: visibility,
                 groundConditions: groundConditions,
@@ -714,6 +745,9 @@
                 lightConditions: document.getElementById('light-conditions').textContent,
                 comments: comments || ''
             };
+
+            // DEBUG: Log the data being sent
+            console.log('Sending data to Google Sheets:', formData);
 
             try {
                 // Show loading
@@ -770,6 +804,9 @@
             // Reset pumping time (optional)
             document.getElementById('pumping-minutes').value = '';
             document.getElementById('pumping-seconds').value = '';
+            
+            // Hide validation errors
+            document.getElementById('time-comparison-error').style.display = 'none';
             
             updateTimeDisplays();
             updateCharCount();
