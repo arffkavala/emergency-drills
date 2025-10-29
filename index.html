@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emergency Response Task Registry</title>
     <style>
+        /* [KEEP ALL YOUR EXISTING CSS STYLES - THEY ARE CORRECT] */
         * {
             margin: 0;
             padding: 0;
@@ -471,6 +472,7 @@
 
         // Function to capitalize first letter of each word
         function capitalizeWords(str) {
+            if (!str) return '';
             return str.replace(/\b\w/g, function(char) {
                 return char.toUpperCase();
             });
@@ -638,7 +640,7 @@
             });
         }
 
-        // Submit data to Google Sheets
+        // Submit data to Google Sheets - FIXED DATA STRUCTURE
         async function submitDrill() {
             const submitBtn = document.getElementById('submit-btn');
             const loadingMsg = document.getElementById('loading-message');
@@ -698,20 +700,19 @@
             const hours = String(now.getHours()).padStart(2, '0'); // 24-hour format
             const minutes = String(now.getMinutes()).padStart(2, '0');
             
+            // CORRECTED DATA STRUCTURE - matches Google Apps Script expectations
             const formData = {
-                timestamp: `${day}-${month}-${year} ${hours}:${minutes}`, // 24-hour format
-                weather: capitalizeWords(weather),
+                timestamp: `${day}-${month}-${year} ${hours}:${minutes}`,
+                weather: weather,
                 visibility: visibility,
-                groundConditions: capitalizeWords(groundConditions),
-                vehicle: capitalizeWords(vehicle),
-                startingPosition: capitalizeWords(startingPosition),
-                // New combined time format: "04'24""
+                groundConditions: groundConditions,
+                vehicle: vehicle,
+                startingPosition: startingPosition,
                 arrivalTime: `${arrivalMinutes.padStart(2, '0')}'${arrivalSeconds.padStart(2, '0')}"`,
-                // Pumping time is optional - send empty string if not provided
                 pumpingTime: (pumpingMinutes || pumpingSeconds) ? 
                     `${(pumpingMinutes || '00').padStart(2, '0')}'${(pumpingSeconds || '00').padStart(2, '0')}"` : '',
                 lightConditions: document.getElementById('light-conditions').textContent,
-                comments: comments ? capitalizeWords(comments) : ''
+                comments: comments || ''
             };
 
             try {
@@ -722,7 +723,6 @@
                 // Submit to Google Sheets using fetch
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
